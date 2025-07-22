@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI-Powered Diet Plan Generator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f7f9;
+      padding: 30px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #0077cc;
+    }
+
+    form {
+      display: grid;
+      gap: 15px;
+    }
+
+    input, select, button {
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #0077cc;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #005fa3;
+    }
+
+    .loader {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .loader span {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin: 3px;
+      background: #0077cc;
+      border-radius: 50%;
+      animation: bounce 0.6s infinite alternate;
+    }
+
+    .loader span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .loader span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+      to {
+        transform: translateY(-10px);
+      }
+    }
+
+    .result {
+      margin-top: 30px;
+    }
+
+    .meal {
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .meal:last-child {
+      border-bottom: none;
+    }
+
+    .meal h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #0077cc;
+    }
+
+    .meal p {
+      margin: 8px 0 0;
+      font-size: 16px;
+    }
+
+    .emoji {
+      font-size: 20px;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>🥗 AI Diet Plan Generator</h2>
+
+    <form onsubmit="event.preventDefault(); getPlan();">
+      <input type="number" id="weight" placeholder="Current Weight (kg)" required />
+      <input type="number" id="height" placeholder="Height (feet)" required />
+      <input type="number" id="targetWeight" placeholder="Target Weight (kg)" required />
+      <select id="dietType">
+        <option value="vegetarian">Vegetarian</option>
+        <option value="non-vegetarian">Non-Vegetarian</option>
+        <!-- <option value="vegan">Vegan</option>
+        <option value="keto">Keto</option> -->
+      </select>
+      <button type="submit">Generate Diet Plan</button>
+    </form>
+
+    <div class="loader" id="loader">
+      <span></span><span></span><span></span>
+    </div>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    async function getPlan() {
+      const weight = document.getElementById('weight').value;
+      const height = document.getElementById('height').value;
+      const targetWeight = document.getElementById('targetWeight').value;
+      const dietType = document.getElementById('dietType').value;
+      const loader = document.getElementById('loader');
+      const result = document.getElementById('result');
+
+      loader.style.display = 'block';
+      result.innerHTML = '';
+
+      const requestBody = {
+        weight: parseFloat(weight),
+        height: parseFloat(height),
+        targetWeight: parseFloat(targetWeight),
+        dietType
+      };
+
+      try {
+        const response = await fetch('http://localhost:3000/get-diet-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        const data = await response.json();
+        loader.style.display = 'none';
+
+        if (data.error) {
+          result.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+          return;
+        }
+
+        const emojiMap = {
+          breakfast: '🍳',
+          lunch: '🥗',
+          dinner: '🍲'
+        };
+
+        for (const key in data) {
+          const mealDiv = document.createElement('div');
+          mealDiv.className = 'meal';
+          mealDiv.innerHTML = `
+            <h3><span class="emoji">${emojiMap[key] || '🍽️'}</span>${key.charAt(0).toUpperCase() + key.slice(1)}</h3>
+            <p>${data[key]}</p>
+          `;
+          result.appendChild(mealDiv);
+        }
+
+      } catch (err) {
+        loader.style.display = 'none';
+        result.innerHTML = `<p style="color: red;">Failed to fetch diet plan. Try again later.</p>`;
+        console.error(err);
+      }
+    }
+  </script>
+
+</body>
+</html>
